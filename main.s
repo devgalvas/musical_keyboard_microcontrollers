@@ -97,12 +97,13 @@ ESTADO_OIT DCW 0; 0 = oitava 1 / 1 = oitava 2
         AREA atv1, CODE, READONLY
         
 __main
-		;Habilitando remapeamento da JTAG(0), GPIOA(2) e GPIOB(3)
+		;Habilitando remapeamento da JTAG(0), GPIOA(2), GPIOB(3) e ADC1(9)
         LDR R1,=RCC_APB2ENR
         LDR R0,[R1]
-		ORR R0,R0, #hab_gpiob_gpioa_afio    
-		STR R0,[R1]	   
-                 
+		ORR R0,R0, #hab_gpiob_gpioa_afio 
+		ORR R0,R0, #0x0200      ; (Habilita Clock do ADC1)
+		STR R0,[R1]
+		
 		;Remapeando JTAG para GPIO
 		LDR R1,=AFIO_MAPR                  
 		LDR R0,=JTAG_GPIO                   
@@ -148,7 +149,7 @@ __main
 		; --- GPIOB_CRL (Pinos 0 a 7) ---
 		LDR R1, =GPIOB_CRL
 		LDR R0, [R1]
-		LDR R2, =0x00FFFF0F     ; Limpa PB5, PB4, PB3, PB1, PB0
+		LDR R2, =0x00FFFFFF     ; Limpa PB5, PB4, PB3, PB1, PB0
 		BIC R0, R0, R2
 		LDR R2, =0x0088800B     ; Seta: PB5=8, PB4=8, PB3=8, PB0=B (Alt Func)
 		ORR R0, R0, R2
@@ -157,16 +158,16 @@ __main
 		; --- GPIOB_CRH (Pinos 8 a 15) ---
 		LDR R1, =GPIOB_CRH
 		LDR R0, [R1]
-		LDR R2, =0xFFFF0FFF     ; Limpa PB12-15 e PB8-10
+		LDR R2, =0xFFFFFFFF     
 		BIC R0, R0, R2
-		LDR R2, =0x88880888     ; Seta todos esses como 0x8
+		LDR R2, =0x88888888     
 		ORR R0, R0, R2
 		STR R0, [R1]
 
 		; --- GPIOB_ODR (Ativar Pull-ups das Entradas) ---
 		LDR R1, =GPIOB_ODR
 		LDR R0, [R1]
-		LDR R2, =0xF738         ; Ativa pull-ups apenas dos botões
+		LDR R2, =0xFF38   
 		ORR R0, R0, R2
 		STR R0, [R1]
 
