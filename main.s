@@ -114,88 +114,80 @@ __main
         ORR R0, R0, #0x10
         STR R0, [R1]
 		
-		; Configurar PA3, PA4, PA7 como entrada pull-up/pull-down
+			; ---------------------------------------------------------
+		; 1. CONFIGURAÇÃO PORTA A (GPIOA)
+		; ---------------------------------------------------------
+		; PA3, PA4, PA7: Entrada Pull-up/down (CNF=10, MODE=00 -> 0x8)
+		; ---------------------------------------------------------
 		LDR R1, =GPIOA_CRL
 		LDR R0, [R1]
-		LDR R2, =0xF00FF000 ; limpa PA3,4,7
+		LDR R2, =0xF00FF000     ; Máscara para limpar PA3, PA4, PA7
 		BIC R0, R0, R2
-		LDR R2, =0x80088000 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x80088000     ; Configuração 0x8 (Input Pull-up)
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PA3, PA4, PA7
+		; Ativar Pull-ups (PA3, PA4, PA7)
 		LDR R1, =GPIOA_ODR
 		LDR R0, [R1]
-		ORR R0, R0, #0x98    ; bits 3, 4 e 7
+		LDR R2, =0x0098         ; Bits: 7(0x80) | 4(0x10) | 3(0x08)
+		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Configurar PB3, PB4, PB5 como entrada pull-up/pull-down
+		; ---------------------------------------------------------
+		; 2. CONFIGURAÇÃO PORTA B (GPIOB) - OTIMIZADO
+		; ---------------------------------------------------------
+		; --- GPIOB_CRL (Pinos 0 a 7) ---
+		; PB0: Saída Alt. Function 50MHz (0xB)
+		; PB3, PB4, PB5: Entrada Pull-up (0x8)
 		LDR R1, =GPIOB_CRL
 		LDR R0, [R1]
-		LDR R2, =0x00FFF000 ; limpa PB3,4,5
+		LDR R2, =0x00FFF00F     ; Limpa PB3, PB4, PB5 e PB0
 		BIC R0, R0, R2
-		LDR R2, =0x00888000 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x0088800B     ; Seta: PB3,4,5=0x8 (Entrada) e PB0=0xB (Alt Func)
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PB3, PB4, PB5
-		LDR R1, =GPIOB_ODR
-		LDR R0, [R1]
-		ORR R0, R0, #0x38    ; bits 3, 4 e 5
-		STR R0, [R1]
-
-		; Configurar PB8, PB9, PB10 como entrada pull-up/pull-down
+		; --- GPIOB_CRH (Pinos 8 a 15) ---
+		; PB8, PB9, PB10: Entrada Pull-up (0x8)
+		; PB12, PB13, PB14, PB15: Entrada Pull-up (0x8)
+		; (Nota: PB11 foi mantido inalterado conforme seu código original)
 		LDR R1, =GPIOB_CRH
 		LDR R0, [R1]
-		LDR R2, =0x00000FFF ; limpa PB8,9,10
+		LDR R2, =0xFFFF0FFF     ; Limpa PB12-15 e PB8-10
 		BIC R0, R0, R2
-		LDR R2, =0x00000888 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x88880888     ; Seta todos esses como 0x8
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PB8, PB9, PB10
+		; --- GPIOB_ODR (Ativar Pull-ups) ---
+		; Bits: 15,14,13,12 (0xF000) | 10,9,8 (0x0700) | 5,4,3 (0x0038)
+		; Soma = 0xF738
 		LDR R1, =GPIOB_ODR
 		LDR R0, [R1]
-		ORR R0, R0, #0x0700  ; bits 8, 9 e 10
-		STR R0, [R1]
-		
-		; Configurar PB12, PB13, PB14 e PB15 como entrada pull-up/pull-down
-		LDR R1, =GPIOB_CRH
-		LDR R0, [R1]
-		LDR R2, =0xFFFF0000 ; Limpa PB15, 14, 13, 12
-		BIC R0, R0, R2
-		LDR R2, =0x88880000	; Configurar cada pino como pull-up / pull-down
+		LDR R2, =0xF738         ; Ativa pull-ups de TODOS os inputs B de uma vez
 		ORR R0, R0, R2
 		STR R0, [R1]
-		
-		; Ativar pull-ups em PB12, PB13, PB14 e PB15
-		LDR R1, =GPIOB_ODR
-		LDR R0, [R1]
-		ORR R0, R0, #0xF000  ; bits 12, 13, 14 e 15
-		STR R0, [R1]
-		
-		; Configurar PC13, PC14, PC15 como entrada pull-up/pull-down
+
+		; ---------------------------------------------------------
+		; 3. CONFIGURAÇÃO PORTA C (GPIOC)
+		; ---------------------------------------------------------
+		; PC13, PC14, PC15: Entrada Pull-up (0x8)
+		; ---------------------------------------------------------
 		LDR R1, =GPIOC_CRH
 		LDR R0, [R1]
-		LDR R2, =0xFFF00000 ; limpa PC13,14,15
+		LDR R2, =0xFFF00000     ; Limpa PC13, PC14, PC15
 		BIC R0, R0, R2
-		LDR R2, =0x88800000 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x88800000     ; Configura como 0x8
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PC13, PC14, PC15
-		LDR R1, =GPIOC_ODR	
+		; Ativar Pull-ups (PC13, PC14, PC15)
+		LDR R1, =GPIOC_ODR
 		LDR R0, [R1]
-		ORR R0, R0, #0xE000  ; bits 13, 14 e 15
+		LDR R2, =0xE000         ; Bits 13, 14, 15
+		ORR R0, R0, R2
 		STR R0, [R1]
-        
-        ; Configura PB0 como saída push-pull 50MHz (alternate function)
-        ; Para PWM, precisa ser alternate function push-pull
-        LDR R1, =GPIOB_CRL
-        LDR R0, [R1]
-        BIC R0, R0, #0xF
-        ORR R0, R0, #0xB        ; 1011 = Alternate function output Push-pull, 50 MHz
-        STR R0, [R1]
         
         ; Habilita Timer 3 (bit 1 do APB1ENR)
         LDR R0, =RCC_APB1ENR
