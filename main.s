@@ -114,44 +114,47 @@ __main
         ORR R0, R0, #0x10
         STR R0, [R1]
 		
-			; ---------------------------------------------------------
+		; ---------------------------------------------------------
 		; 1. CONFIGURAÇÃO PORTA A (GPIOA)
 		; ---------------------------------------------------------
-		; PA3, PA4, PA7: Entrada Pull-up/down (CNF=10, MODE=00 -> 0x8)
-		; ---------------------------------------------------------
+		; --- GPIOA_CRL (Pinos 0-7) ---
 		LDR R1, =GPIOA_CRL
 		LDR R0, [R1]
-		LDR R2, =0xF00FF000     ; Máscara para limpar PA3, PA4, PA7
+		LDR R2, =0xFF0FF000     ; Limpa PA7, PA6, PA5, PA4, PA3
 		BIC R0, R0, R2
-		LDR R2, =0x80088000     ; Configuração 0x8 (Input Pull-up)
+		LDR R2, =0x83388000     ; Seta: PA7=8, PA6=3, PA5=3, PA4=8, PA3=8
+		ORR R0, R0, R2          ; (Adicione 333 no final se quiser configurar PA0-2 aqui também)
+		STR R0, [R1]
+
+		; --- GPIOA_CRH (Pinos 8-15) ---
+		LDR R1, =GPIOA_CRH
+		LDR R0, [R1]
+		LDR R2, =0xF00FF00F     ; Limpa PA15, PA12, PA11, PA8
+		BIC R0, R0, R2
+		LDR R2, =0x30033003     ; Seta: PA15=3, PA12=3, PA11=3, PA8=3
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar Pull-ups (PA3, PA4, PA7)
+		; Ativar Pull-ups (Apenas nas entradas: PA3, PA4, PA7)
 		LDR R1, =GPIOA_ODR
 		LDR R0, [R1]
-		LDR R2, =0x0098         ; Bits: 7(0x80) | 4(0x10) | 3(0x08)
+		LDR R2, =0x0098         ; Bits: 7(sw14), 4(sw9), 3(sw8)
 		ORR R0, R0, R2
 		STR R0, [R1]
 
 		; ---------------------------------------------------------
-		; 2. CONFIGURAÇÃO PORTA B (GPIOB) - OTIMIZADO
+		; 2. CONFIGURAÇÃO PORTA B (GPIOB)
 		; ---------------------------------------------------------
 		; --- GPIOB_CRL (Pinos 0 a 7) ---
-		; PB0: Saída Alt. Function 50MHz (0xB)
-		; PB3, PB4, PB5: Entrada Pull-up (0x8)
 		LDR R1, =GPIOB_CRL
 		LDR R0, [R1]
-		LDR R2, =0x00FFF00F     ; Limpa PB3, PB4, PB5 e PB0
+		LDR R2, =0x00FFFF0F     ; Limpa PB5, PB4, PB3, PB1, PB0
 		BIC R0, R0, R2
-		LDR R2, =0x0088800B     ; Seta: PB3,4,5=0x8 (Entrada) e PB0=0xB (Alt Func)
+		LDR R2, =0x0088800B     ; Seta: PB5=8, PB4=8, PB3=8, PB0=B (Alt Func)
 		ORR R0, R0, R2
 		STR R0, [R1]
 
 		; --- GPIOB_CRH (Pinos 8 a 15) ---
-		; PB8, PB9, PB10: Entrada Pull-up (0x8)
-		; PB12, PB13, PB14, PB15: Entrada Pull-up (0x8)
-		; (Nota: PB11 foi mantido inalterado conforme seu código original)
 		LDR R1, =GPIOB_CRH
 		LDR R0, [R1]
 		LDR R2, =0xFFFF0FFF     ; Limpa PB12-15 e PB8-10
@@ -160,19 +163,15 @@ __main
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; --- GPIOB_ODR (Ativar Pull-ups) ---
-		; Bits: 15,14,13,12 (0xF000) | 10,9,8 (0x0700) | 5,4,3 (0x0038)
-		; Soma = 0xF738
+		; --- GPIOB_ODR (Ativar Pull-ups das Entradas) ---
 		LDR R1, =GPIOB_ODR
 		LDR R0, [R1]
-		LDR R2, =0xF738         ; Ativa pull-ups de TODOS os inputs B de uma vez
+		LDR R2, =0xF738         ; Ativa pull-ups apenas dos botões
 		ORR R0, R0, R2
 		STR R0, [R1]
 
 		; ---------------------------------------------------------
 		; 3. CONFIGURAÇÃO PORTA C (GPIOC)
-		; ---------------------------------------------------------
-		; PC13, PC14, PC15: Entrada Pull-up (0x8)
 		; ---------------------------------------------------------
 		LDR R1, =GPIOC_CRH
 		LDR R0, [R1]
@@ -189,6 +188,10 @@ __main
 		ORR R0, R0, R2
 		STR R0, [R1]
         
+		
+		; ---------------------------------------------------------
+		; 4. CONFIGURAÇÃO TIMER 3
+		; ---------------------------------------------------------
         ; Habilita Timer 3 (bit 1 do APB1ENR)
         LDR R0, =RCC_APB1ENR
         LDR R1, [R0]
