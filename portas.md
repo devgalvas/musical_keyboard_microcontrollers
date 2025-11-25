@@ -1,4 +1,4 @@
-# Referência de Hardware e GPIO - Blue Pill
+# Referência de Hardware e GPIO - Blue Pill (Final)
 
 ## 1. Regras de Configuração (Registradores)
 
@@ -44,15 +44,16 @@ A função destes bits depende do valor de MODE.
 
 ---
 
-## 2. Mapeamento de Pinos com Máscaras de Configuração (HEX) - Corrigido
+## 2. Mapeamento de Pinos com Máscaras de Configuração (HEX)
 
-## Legenda de Valores (Nibble de Configuração)
+### Legenda de Valores (Nibble de Configuração)
 
-- **0xB**: Saída Função Alternada (Push-Pull, 50MHz) -> Para LEDs, LCD, Buzzer, UART TX
-- **0x8**: Entrada Digital (Pull-up/Pull-down) -> Para Botões (Switches)
-- **0x0**: Entrada Analógica -> Para Potenciômetro
-- **0xF**: Saída Função Alternada (Open-Drain, 50MHz) -> Para I2C (SCL/SDA)
-- **0x4**: Entrada Flutuante -> Para UART RX
+- **0x3**: Saída GPIO Comum (Push-Pull, 50MHz) -> **Para LEDs e LCD** (Controle manual por software)
+- **0xB**: Saída Função Alternada (Push-Pull, 50MHz) -> **Para Buzzer (PWM) e UART TX**
+- **0x8**: Entrada Digital (Pull-up/Pull-down) -> **Para Botões**
+- **0x0**: Entrada Analógica -> **Para Potenciômetro**
+- **0xF**: Saída Função Alternada (Open-Drain, 50MHz) -> **Para I2C (SCL/SDA)**
+- **0x4**: Entrada Flutuante -> **Para UART RX**
 
 ---
 
@@ -60,51 +61,61 @@ A função destes bits depende do valor de MODE.
 
 **GPIO_CRL (Pinos 0-7)**
 
-- `PA0` - **ld1** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA1` - **ld2** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA2` - **ld3** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA3` - **sw8** : Entrada Pull-up/Pull-down - **0x8**
-- `PA4` - **sw9** : Entrada Pull-up/Pull-down - **0x8**
-- `PA5` - **lcd6-led7** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA6` - **lcd5-led6** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA7` - **sw14** : Entrada Pull-up/Pull-down - **0x8**
+| Pino  | Componente    | Config (CRL) | Tipo                      |
+| :---- | :------------ | :----------: | :------------------------ |
+| `PA0` | **ld1**       |   **0x3**    | Saída GPIO Push-Pull      |
+| `PA1` | **ld2**       |   **0x3**    | Saída GPIO Push-Pull      |
+| `PA2` | **ld3**       |   **0x3**    | Saída GPIO Push-Pull      |
+| `PA3` | **sw8**       |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PA4` | **sw9**       |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PA5` | **lcd6-led7** |   **0x3**    | Saída GPIO Push-Pull      |
+| `PA6` | **lcd5-led6** |   **0x3**    | Saída GPIO Push-Pull      |
+| `PA7` | **sw14**      |   **0x8**    | Entrada Pull-up/Pull-down |
 
 **GPIO_CRH (Pinos 8-15)**
 
-- `PA8` - **lcd4-led5** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA9` - **Tx** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA10` - **Rx** : Entrada Floating (ou Pull-up) - **0x4**
-- `PA11` - **lcd7-led8** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA12` - **lcd_en** : Saída Alt. Function PP 50MHz - **0xB**
-- `PA15` - **lcd_rs-led4** : Saída Alt. Function PP 50MHz - **0xB**
+| Pino   | Componente      | Config (CRH) | Tipo                       |
+| :----- | :-------------- | :----------: | :------------------------- |
+| `PA8`  | **lcd4-led5**   |   **0x3**    | Saída GPIO Push-Pull       |
+| `PA9`  | **Tx**          |   **0xB**    | Saída Alt. Function (UART) |
+| `PA10` | **Rx**          |   **0x4**    | Entrada Floating           |
+| `PA11` | **lcd7-led8**   |   **0x3**    | Saída GPIO Push-Pull       |
+| `PA12` | **lcd_en**      |   **0x3**    | Saída GPIO Push-Pull       |
+| `PA15` | **lcd_rs-led4** |   **0x3**    | Saída GPIO Push-Pull       |
 
 ### **Porta PB (GPIOB)**
 
 **GPIO_CRL (Pinos 0-7)**
 
-- `PB0` - **bz1** : Saída Alt. Function PP 50MHz - **0xB**
-- `PB1` - **pot** : Entrada Analógica - **0x0**
-- `PB3` - **sw7** : Entrada Pull-up/Pull-down - **0x8**
-- `PB4` - **sw6** : Entrada Pull-up/Pull-down - **0x8**
-- `PB5` - **sw5** : Entrada Pull-up/Pull-down - **0x8**
-- `PB6` - **Scl** : Saída Alt. Function OD 50MHz - **0xF**
-- `PB7` - **Sda** : Saída Alt. Function OD 50MHz - **0xF**
+| Pino  | Componente | Config (CRL) | Tipo                        |
+| :---- | :--------- | :----------: | :-------------------------- |
+| `PB0` | **bz1**    |   **0xB**    | Saída Alt. Function (PWM)   |
+| `PB1` | **pot**    |   **0x0**    | Entrada Analógica           |
+| `PB3` | **sw7**    |   **0x8**    | Entrada Pull-up/Pull-down   |
+| `PB4` | **sw6**    |   **0x8**    | Entrada Pull-up/Pull-down   |
+| `PB5` | **sw5**    |   **0x8**    | Entrada Pull-up/Pull-down   |
+| `PB6` | **Scl**    |   **0xF**    | Saída Alt. Open-Drain (I2C) |
+| `PB7` | **Sda**    |   **0xF**    | Saída Alt. Open-Drain (I2C) |
 
 **GPIO_CRH (Pinos 8-15)**
 
-- `PB8` - **sw10** : Entrada Pull-up/Pull-down - **0x8**
-- `PB9` - **sw11** : Entrada Pull-up/Pull-down - **0x8**
-- `PB10` - **sw13** : Entrada Pull-up/Pull-down - **0x8**
-- `PB11` - **sw12** : Entrada Pull-up/Pull-down - **0x8**
-- `PB12` - **sw1** : Entrada Pull-up/Pull-down - **0x8**
-- `PB13` - **sw2** : Entrada Pull-up/Pull-down - **0x8**
-- `PB14` - **sw3** : Entrada Pull-up/Pull-down - **0x8**
-- `PB15` - **sw4** : Entrada Pull-up/Pull-down - **0x8**
+| Pino   | Componente | Config (CRH) | Tipo                      |
+| :----- | :--------- | :----------: | :------------------------ |
+| `PB8`  | **sw10**   |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PB9`  | **sw11**   |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PB10` | **sw13**   |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PB11` | **sw12**   |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PB12` | **sw1**    |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PB13` | **sw2**    |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PB14` | **sw3**    |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PB15` | **sw4**    |   **0x8**    | Entrada Pull-up/Pull-down |
 
 ### **Porta PC (GPIOC)**
 
 **GPIO_CRH (Pinos 8-15)**
 
-- `PC13` - **sw17** : Entrada Pull-up/Pull-down - **0x8**
-- `PC14` - **sw16** : Entrada Pull-up/Pull-down - **0x8**
-- `PC15` - **sw15** : Entrada Pull-up/Pull-down - **0x8**
+| Pino   | Componente | Config (CRH) | Tipo                      |
+| :----- | :--------- | :----------: | :------------------------ |
+| `PC13` | **sw17**   |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PC14` | **sw16**   |   **0x8**    | Entrada Pull-up/Pull-down |
+| `PC15` | **sw15**   |   **0x8**    | Entrada Pull-up/Pull-down |
