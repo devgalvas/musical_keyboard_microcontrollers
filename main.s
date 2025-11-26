@@ -110,151 +110,139 @@ ESTADO_OIT DCW 0; 0 = oitava 1 / 1 = oitava 2
         EXPORT __main
         AREA atv1, CODE, READONLY
         
-__main	
-
-		;Habilitando remapeamento da JTAG(0), GPIOA(2) e GPIOB(3)
-        LDR R1,=RCC_APB2ENR
-        LDR R0,[R1]
-		ORR R0,R0, #hab_gpiob_gpioa_afio    
-		STR R0,[R1]	   
-                 
-		;Remapeando JTAG para GPIO
-		LDR R1,=AFIO_MAPR                  
-		LDR R0,=JTAG_GPIO                   
-		STR R0,[R1]     
-
-        ; Habilita GPIOC
-        LDR R1, =RCC_APB2ENR
-        LDR R0, [R1]
-        ORR R0, R0, #0x10
-        STR R0, [R1]
+__main
+		; 1. Habilitar Clocks (GPIOA, GPIOB, GPIOC, AFIO, ADC1)
+		LDR R1, =RCC_APB2ENR
+		LDR R0, [R1]
+		ORR R0, R0, #hab_gpiob_gpioa_afio
+		ORR R0, R0, #0x10       ; Habilita GPIOC
+		ORR R0, R0, #0x0200     ; Habilita ADC1 (Bit 9)
+		STR R0, [R1]
 		
-		; Configurar PA3, PA4, PA7 como entrada pull-up/pull-down
+		; 2. Remapear JTAG para liberar pinos PB3, PB4, PA15
+		LDR R1, =AFIO_MAPR
+		LDR R0, =JTAG_GPIO
+		STR R0, [R1]
+
+		; ---------------------------------------------------------
+		; 3. CONFIGURAÇÃO GPIO
+		; ---------------------------------------------------------
+		
+		; --- PORTA A (GPIOA) ---
+		; PA3, PA4, PA7 (Entradas Pull-up - 0x8)
+		; PA5, PA6 (LCD - Saída Push-Pull - 0x3)
 		LDR R1, =GPIOA_CRL
 		LDR R0, [R1]
-		LDR R2, =0xF00FF000 ; limpa PA3,4,7
+		LDR R2, =0xFF0FF000     ; Limpa PA7, PA6, PA5, PA4, PA3
 		BIC R0, R0, R2
-		LDR R2, =0x80088000 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x83388000     ; Configura PA7=8, PA6=3, PA5=3, PA4=8, PA3=8
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PA3, PA4, PA7
+		; PA8, PA11, PA12, PA15 (LCD - Saída Push-Pull - 0x3)
+		LDR R1, =GPIOA_CRH
+		LDR R0, [R1]
+		LDR R2, =0xF00FF00F     ; Limpa PA15, PA12, PA11, PA8
+		BIC R0, R0, R2
+		LDR R2, =0x30033003     ; Configura PA15=3, PA12=3, PA11=3, PA8=3
+		ORR R0, R0, R2
+		STR R0, [R1]
+
+		; Pull-ups Porta A
 		LDR R1, =GPIOA_ODR
 		LDR R0, [R1]
-		ORR R0, R0, #0x98    ; bits 3, 4 e 7
+		LDR R2, =0x0098         ; PA7, PA4, PA3
+		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Configurar PB3, PB4, PB5 como entrada pull-up/pull-down
+		; --- PORTA B (GPIOB) ---
+		; PB0 (Buzzer - Alt Func - 0xB)
+		; PB1 (Pot - Analógico - 0x0)
+		; PB3, PB4, PB5 (Teclas - Entrada - 0x8)
 		LDR R1, =GPIOB_CRL
 		LDR R0, [R1]
-		LDR R2, =0x00FFF000 ; limpa PB3,4,5
+		LDR R2, =0x00FFF0FF     ; CORREÇÃO CRÍTICA: Limpa PB5-PB0 (Garante PB1 = 0)
 		BIC R0, R0, R2
-		LDR R2, =0x00888000 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x0088800B     ; Configura PB5=8, PB4=8, PB3=8, PB0=B
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PB3, PB4, PB5
-		LDR R1, =GPIOB_ODR
-		LDR R0, [R1]
-		ORR R0, R0, #0x38    ; bits 3, 4 e 5
-		STR R0, [R1]
-
-		; Configurar PB8, PB9, PB10 como entrada pull-up/pull-down
+		; PB8-PB15 (Teclas - Entrada - 0x8) - INCLUI SW12 (PB11)
 		LDR R1, =GPIOB_CRH
 		LDR R0, [R1]
-		LDR R2, =0x00000FFF ; limpa PB8,9,10
+		LDR R2, =0xFFFFFFFF     ; Limpa Tudo
 		BIC R0, R0, R2
-		LDR R2, =0x00000888 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x88888888     ; Configura Tudo como 0x8
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PB8, PB9, PB10
+		; Pull-ups Porta B (SW12 incluso)
 		LDR R1, =GPIOB_ODR
 		LDR R0, [R1]
-		ORR R0, R0, #0x0700  ; bits 8, 9 e 10
-		STR R0, [R1]
-		
-		; Configurar PB12, PB13, PB14 e PB15 como entrada pull-up/pull-down
-		LDR R1, =GPIOB_CRH
-		LDR R0, [R1]
-		LDR R2, =0xFFFF0000 ; Limpa PB15, 14, 13, 12
-		BIC R0, R0, R2
-		LDR R2, =0x88880000	; Configurar cada pino como pull-up / pull-down
+		LDR R2, =0xFF38         ; Bits 15-8 e 5-3
 		ORR R0, R0, R2
 		STR R0, [R1]
-		
-		; Ativar pull-ups em PB12, PB13, PB14 e PB15
-		LDR R1, =GPIOB_ODR
-		LDR R0, [R1]
-		ORR R0, R0, #0xF000  ; bits 12, 13, 14 e 15
-		STR R0, [R1]
-		
-		; Configurar PC13, PC14, PC15 como entrada pull-up/pull-down
+
+		; --- PORTA C (GPIOC) ---
+		; PC13, PC14, PC15 (Teclas - Entrada - 0x8)
 		LDR R1, =GPIOC_CRH
 		LDR R0, [R1]
-		LDR R2, =0xFFF00000 ; limpa PC13,14,15
+		LDR R2, =0xFFF00000     ; Limpa PC13-15
 		BIC R0, R0, R2
-		LDR R2, =0x88800000 ; entrada pull-up/pull-down (0x8)
+		LDR R2, =0x88800000     ; Configura 0x8
 		ORR R0, R0, R2
 		STR R0, [R1]
 
-		; Ativar pull-ups em PC13, PC14, PC15
-		LDR R1, =GPIOC_ODR	
+		; Pull-ups Porta C
+		LDR R1, =GPIOC_ODR
 		LDR R0, [R1]
-		ORR R0, R0, #0xE000  ; bits 13, 14 e 15
+		LDR R2, =0xE000
+		ORR R0, R0, R2
 		STR R0, [R1]
-        
-        ; Configura PB0 como saída push-pull 50MHz (alternate function)
-        ; Para PWM, precisa ser alternate function push-pull
-        LDR R1, =GPIOB_CRL
-        LDR R0, [R1]
-        BIC R0, R0, #0xF
-        ORR R0, R0, #0xB        ; 1011 = Alternate function output Push-pull, 50 MHz
-        STR R0, [R1]
-        
-        ; Habilita Timer 3 (bit 1 do APB1ENR)
-        LDR R0, =RCC_APB1ENR
-        LDR R1, [R0]
-        ORR R1, R1, #0x02       ; bit 1 para TIM3
-        STR R1, [R0]
-        
-        ; Configura ARR = 99
-        LDR R0, =TIM3_ARR
-        MOV R1, #99
-        STR R1, [R0]
-        
-        ; Configura CCR3 = 50 (ciclo de trabalho 50%)
-        LDR R0, =TIM3_CCR3
-        MOV R1, #50
-        STR R1, [R0]
-        
-        ; Configura CCMR2 - Canal 3 como PWM mode 1
-        ; OC3M = 110 (bits 6:4), OC3PE = 1 (bit 3)
-        LDR R0, =TIM3_CCMR2
-        MOV R1, #0x68           ; 0110 1000 = PWM mode 1 com preload enable
-        STR R1, [R0]
-        
-        ; NÃO habilita CCER aqui - será habilitado em toca_nota
 		
 		; ---------------------------------------------------------
-		; 5. CONFIGURAÇÃO ADC1 (Para o Potenciômetro PB1)
+		; 4. INICIALIZAÇÃO ADC1 (Para Bending)
 		; ---------------------------------------------------------
 		; Selecionar canal 9 (PB1) na sequência 1
 		LDR R0, =ADC1_SQR3
-		MOV R1, #0x09           ; 0x09 = Canal 9
+		MOV R1, #0x09           ; Canal 9
 		STR R1, [R0]
 
 		; Ligar o ADC1 (ADON = 1)
 		LDR R0, =ADC1_CR2
 		LDR R1, [R0]
-		ORR R1, R1, #0x01       ; Seta bit ADON
+		ORR R1, R1, #0x01
 		STR R1, [R0]
 		
-		; Delay curto para estabilização (sugerido pelo manual)
+		; Delay para estabilização
 		MOV R0, #0xFF
 delay_adc
 		SUBS R0, R0, #1
 		BNE delay_adc
+
+		; ---------------------------------------------------------
+		; 5. CONFIGURAÇÃO TIMER 3 (PWM)
+		; ---------------------------------------------------------
+		; Habilita Timer 3 Clock
+		LDR R0, =RCC_APB1ENR
+		LDR R1, [R0]
+		ORR R1, R1, #0x02       ; Bit 1 = TIM3
+		STR R1, [R0]
+		
+		; Configura ARR = 99 (Base para duty cycle %)
+		LDR R0, =TIM3_ARR
+		MOV R1, #99
+		STR R1, [R0]
+		
+		; Configura CCR3 = 50 (50% inicial)
+		LDR R0, =TIM3_CCR3
+		MOV R1, #50
+		STR R1, [R0]
+		
+		; PWM Mode 1 (OC3M=110), Preload=1
+		LDR R0, =TIM3_CCMR2
+		MOV R1, #0x68
+		STR R1, [R0]
         
 loop_principal
 		BL verifica_controles
