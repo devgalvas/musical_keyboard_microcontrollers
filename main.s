@@ -35,6 +35,14 @@ LCD_RS      EQU 0x8000
 ;LCD_RW      EQU 0x0400    ;10
 ;LCD_RS_RW   EQU LCD_RS+LCD_RW
 
+; Registros do ADC1
+ADC1_BASE   EQU 0x40012400
+ADC1_SR     EQU ADC1_BASE+0x0000
+ADC1_DR     EQU ADC1_BASE+0x004C
+ADC1_CR2    EQU ADC1_BASE+0x0008
+ADC1_SQR3   EQU ADC1_BASE+0x0034
+ADC1_SMPR2 EQU ADC1_BASE+0x0010 
+
 ;Máscaras de configuração
 hab_gpiob_gpioa_afio EQU 0x0D       ;afion_0+iopaen_2+iopben_3=0x0D
 JTAG_GPIO            EQU 0x02000000 ;remapeia JTAG para GPIO
@@ -227,6 +235,26 @@ __main
         STR R1, [R0]
         
         ; NÃO habilita CCER aqui - será habilitado em toca_nota
+		
+		; ---------------------------------------------------------
+		; 5. CONFIGURAÇÃO ADC1 (Para o Potenciômetro PB1)
+		; ---------------------------------------------------------
+		; Selecionar canal 9 (PB1) na sequência 1
+		LDR R0, =ADC1_SQR3
+		MOV R1, #0x09           ; 0x09 = Canal 9
+		STR R1, [R0]
+
+		; Ligar o ADC1 (ADON = 1)
+		LDR R0, =ADC1_CR2
+		LDR R1, [R0]
+		ORR R1, R1, #0x01       ; Seta bit ADON
+		STR R1, [R0]
+		
+		; Delay curto para estabilização (sugerido pelo manual)
+		MOV R0, #0xFF
+delay_adc
+		SUBS R0, R0, #1
+		BNE delay_adc
         
 loop_principal
 		BL verifica_controles
@@ -532,4 +560,30 @@ wait_tim2
 fim_controles
 	POP {R3, R2, R1, R0, PC}
 
-        END
+;===========================================================
+; Sub-rotina: ler_potenciometro
+; Saída: R0 = Valor de 12 bits do ADC (0 a 4095)
+;===========================================================
+ler_potenciometro
+		PUSH {R1, LR}
+		
+		; Iniciar a conversão (Seta ADON novamente)
+		LDR R0, =ADC1_CR2
+		LDR R1, [R0]
+		ORR R1, R1, #0x01
+		STR R1, [R0]
+
+wait_eoc
+		; Monitorar o final da conversão (Bit EOC no SR)
+		LDR R0, =ADC1_SR
+		LDR R1, [R0]
+		TST R1, #0x02       ; Testa bit 1 (EOC)
+		BEQ wait_eoc        ; Se 0, continua esperando
+
+		; Ler o resultado
+		LDR R0, =ADC1_DR
+		LDR R0, [R0]        ; O valor convertido vai para R0
+		
+		POP {R1, PC}
+
+    END
